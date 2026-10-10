@@ -12,7 +12,7 @@ import {
   TypeSafeError,
   VERSION,
 } from "../src";
-import { DEFAULT_BASE_URL, DEFAULT_MODEL } from "../src/client";
+import { DEFAULT_BASE_URL, DEFAULT_MODEL, DEFAULT_PATH } from "../src/client";
 import { DEFAULT_LOG_LEVEL, LOG_LEVELS } from "../src/logging";
 import { DEFAULT_RETRY_POLICY, DEFAULT_TIMEOUT_MS } from "../src/retry";
 import { describeRuntime } from "../src/runtime";
@@ -108,6 +108,13 @@ describe("TypeSafeClient configuration", () => {
     expect(new TypeSafeClient({ apiKey: "k", baseURL: "https://x.test/" }).baseURL).toBe(
       "https://x.test",
     );
+  });
+
+  it("rejects a defaultPath without a leading slash", () => {
+    expect(() => new TypeSafeClient({ apiKey: "k", defaultPath: "v1/systemone" })).toThrow(
+      TypeSafeError,
+    );
+    expect(() => new TypeSafeClient({ apiKey: "k", defaultPath: "" })).toThrow("defaultPath");
   });
 
   it.each(LOG_LEVELS)("accepts log level %s", (level) => {
@@ -231,6 +238,37 @@ describe("requests", () => {
     });
     expect(requests[0]?.body).toMatchObject({ model: "client-default" });
     expect(requests[1]?.body).toMatchObject({ model: "per-call" });
+  });
+
+  it("posts systemOne to defaultPath, leaving other endpoints on their Jev paths", async () => {
+    const { fetch, requests } = mockFetch(({ url }) =>
+      json(url.endsWith("/v1/models") ? { models: [] } : SYSTEM_ONE_RESPONSE),
+    );
+    const client = new TypeSafeClient({
+      apiKey: "k",
+      baseURL: "https://x.test/accounts/a/",
+      defaultPath: "/ai/run/@cf/cloudflare/clef-omni",
+      fetch,
+    });
+    await client.systemOne({ state: "s", questions: { q1: noul("x") } });
+    await client.models.list();
+    expect(requests.map((r) => r.url)).toEqual([
+      "https://x.test/accounts/a/ai/run/@cf/cloudflare/clef-omni",
+      "https://x.test/accounts/a/v1/models",
+    ]);
+    expect(new TypeSafeClient({ apiKey: "k" }).defaultPath).toBe(DEFAULT_PATH);
+  });
+
+  it("sends media fields in the payload unchanged", async () => {
+    const { fetch, requests } = mockFetch(() => json(SYSTEM_ONE_RESPONSE));
+    const client = new TypeSafeClient({ apiKey: "k", fetch });
+    const media = {
+      images: ["data:image/png;base64,AA"],
+      audio: [{ content_type: "audio/mpeg", base64: "AA" }],
+      videos: ["data:video/mp4;base64,AA"],
+    } as const;
+    await client.systemOne({ state: "s", questions: { q1: noul("x") }, ...media });
+    expect(requests[0]?.body).toMatchObject(media);
   });
 
   it("aborting the caller's signal aborts the signal handed to fetch, and wraps the error", async () => {

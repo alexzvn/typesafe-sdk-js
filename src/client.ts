@@ -40,6 +40,7 @@ import { VERSION } from "./version";
 
 export const DEFAULT_BASE_URL = "https://api.typesafe.ai";
 export const DEFAULT_MODEL = "jev-latest";
+export const DEFAULT_PATH = "/v1/systemone";
 
 // ---------------------------------------------------------------------------
 // Construction-time checks
@@ -95,6 +96,13 @@ const assertNonNegativeMs = (name: string, value: number): number => {
 const assertFraction = (name: string, value: number): number => {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
     throw new TypeSafeError(`\`${name}\` must be between 0 and 1, got ${String(value)}.`);
+  }
+  return value;
+};
+
+const assertPath = (name: string, value: string): string => {
+  if (!value.startsWith("/")) {
+    throw new TypeSafeError(`\`${name}\` must start with "/", got ${JSON.stringify(value)}.`);
   }
   return value;
 };
@@ -238,6 +246,8 @@ export class TypeSafeClient {
   readonly baseURL: string;
   /** Model used when a request omits `model`. */
   readonly defaultModel: string;
+  /** Path appended to `baseURL` for `systemOne` requests. */
+  readonly defaultPath: string;
   /** Configured log verbosity. */
   readonly logLevel: LogLevel;
   /** The configured logger, filtered to `logLevel`. */
@@ -272,6 +282,7 @@ export class TypeSafeClient {
       fromCodeOrEnv(config.baseURL, ENV.baseURL) ?? DEFAULT_BASE_URL,
     );
     this.defaultModel = fromCodeOrEnv(config.defaultModel, ENV.defaultModel) ?? DEFAULT_MODEL;
+    this.defaultPath = assertPath("defaultPath", config.defaultPath ?? DEFAULT_PATH);
     this.logLevel = resolveLogLevel(config.logLevel);
     this.logger = withLevel(config.logger ?? consoleLogger, this.logLevel);
     this.retry = resolveRetryPolicy(DEFAULT_RETRY_POLICY, config.retry);
@@ -318,7 +329,7 @@ export class TypeSafeClient {
       model: request.model ?? this.defaultModel,
     } satisfies SystemOneRequestPayload;
 
-    return this.#request<SystemOneResult<Q>>("POST", "/v1/systemone", {
+    return this.#request<SystemOneResult<Q>>("POST", this.defaultPath, {
       ...options,
       body,
     });

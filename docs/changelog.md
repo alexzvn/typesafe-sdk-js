@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- add `images`, `audio`, and `videos` to `SystemOneRequest`, typed as base64 data URLs or `{ content_type, base64 }` objects of the matching media kind (`ImageInput`, `AudioInput`, `VideoInput`)
+- add the `defaultPath` client option to send `systemOne` to servers that do not use `/v1/systemone`
+- add media helpers: `image`, `audio`, and `video` encode bytes as data URLs, `fromBlob` encodes a `Blob` or `File` by its own type, `toDataURL` converts `{ content_type, base64 }` to a data URL, `imagePart` builds an `image_url` part for `state` arrays, and `toBase64` encodes bytes in any runtime
+
 ## v0.6.0 (2026-09-15)
 
 ### Breaking changes

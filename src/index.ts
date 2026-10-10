@@ -16,6 +16,7 @@ export {
   UnprocessableEntityError,
 } from "./errors";
 export { LOG_LEVELS } from "./logging";
+export { audio, fromBlob, image, imagePart, toBase64, toDataURL, video } from "./media";
 export { choice, noul, score } from "./questions";
 export type { Models } from "./resources/models";
 export type * from "./types";

@@ -34,6 +34,22 @@ describe("dist/index.mjs (ESM build)", () => {
     expect(headers["X-TypeSafe-SDK"]).toBe(`typesafe-sdk/${pkg.version}`);
   });
 
+  it("sends media built by the bundle's helpers", async () => {
+    const { fetch, calls } = cannedFetch(SYSTEM_ONE_BODY);
+    const client = new sdk.TypeSafeClient({ apiKey: "k", baseURL: BASE_URL, fetch });
+    const png = sdk.image(new Uint8Array([1, 2, 3]), "image/png");
+    await client.systemOne({
+      state: ["listing", sdk.imagePart(png)],
+      images: [png],
+      audio: [await sdk.fromBlob(new Blob([new Uint8Array([1])], { type: "audio/wav" }), "audio")],
+      questions: { ok: sdk.noul("ok?") },
+    });
+    const body = JSON.parse(String(calls[0]?.init?.body));
+    expect(body.images).toEqual(["data:image/png;base64,AQID"]);
+    expect(body.audio).toEqual(["data:audio/wav;base64,AQ=="]);
+    expect(body.state[1]).toEqual({ type: "image_url", image_url: { url: png } });
+  });
+
   it("throws the bundle's own error classes", async () => {
     const fetch = async () => new Response("{}", { status: 429, headers: { "retry-after": "1" } });
     const client = new sdk.TypeSafeClient({
