@@ -1,5 +1,5 @@
 {
-  "name": "@typesafe-ai/sdk",
+  "name": "@alexzvn/systemone",
   "version": "0.6.0",
   "license": "MIT",
   "exports": "./src/index.ts",
