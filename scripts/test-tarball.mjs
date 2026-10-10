@@ -24,8 +24,8 @@ try {
   for (const type of ["commonjs", "module"]) {
     const load =
       type === "module"
-        ? 'import * as sdk from "@typesafe-ai/sdk";'
-        : 'const sdk = require("@typesafe-ai/sdk");';
+        ? 'import * as sdk from "@alexzvn/systemone";'
+        : 'const sdk = require("@alexzvn/systemone");';
     execFileSync(
       process.execPath,
       [

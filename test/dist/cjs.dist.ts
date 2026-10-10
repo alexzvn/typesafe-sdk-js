@@ -31,6 +31,15 @@ describe("dist/index.cjs (CommonJS build)", () => {
     expect(result.answers.tone.probabilities.warm).toBe(0.8);
   });
 
+  it("encodes media through the bundle", () => {
+    const bytes = new Uint8Array([1, 2, 3]);
+    expect(sdk.video(bytes, "video/mp4")).toBe("data:video/mp4;base64,AQID");
+    expect(sdk.toDataURL({ content_type: "image/png", base64: "AQID" })).toBe(
+      "data:image/png;base64,AQID",
+    );
+    expect(() => sdk.audio(bytes, "image/png" as `audio/${string}`)).toThrow(sdk.TypeSafeError);
+  });
+
   it("resolves through the package.json exports map", () => {
     const exportsMap = pkg.exports["."] as { require: { default: string; types: string } };
     expect(exportsMap.require.default).toBe("./dist/index.cjs");

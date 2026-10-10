@@ -149,6 +149,55 @@ export interface ModelCard {
 }
 
 // ---------------------------------------------------------------------------
+// Media
+// ---------------------------------------------------------------------------
+
+/** A top-level media type accepted as request media. */
+export type MediaKind = "image" | "audio" | "video";
+
+/** A base64 data URL of one top-level media type, such as `data:image/png;base64,...`. */
+export type DataURL<Kind extends string = string> = `data:${Kind}/${string}`;
+
+/** Base64 bytes with their media type, without the `data:` prefix. */
+export interface Base64Media<Kind extends string = string> {
+  content_type: `${Kind}/${string}`;
+  base64: string;
+}
+
+/**
+ * Embedded media of one top-level media type: a base64 data URL or base64 bytes with their media type.
+ * Data URLs are the most widely accepted form; some servers reject the object form. Remote URLs are not media inputs.
+ */
+export type MediaInput<Kind extends string = string> = DataURL<Kind> | Base64Media<Kind>;
+
+/** An embedded image, such as PNG, JPEG, or WebP. */
+export type ImageInput = MediaInput<"image">;
+
+/** An embedded audio clip, such as WAV or MP3. */
+export type AudioInput = MediaInput<"audio">;
+
+/** An embedded video, such as MP4 or WebM. */
+export type VideoInput = MediaInput<"video">;
+
+/** Raw bytes for the media helpers; Node `Buffer` and other typed arrays are views. */
+export type BinaryData = ArrayBuffer | ArrayBufferView;
+
+/** A `Blob`, `File`, or other object exposing its media type and bytes. */
+export interface BlobLike {
+  readonly type: string;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+/**
+ * An OpenAI-style image part, for servers that read images from a `state` array or chat messages.
+ * A type alias, not an interface, so it stays assignable to JSON `state`.
+ */
+export type ImagePart = {
+  type: "image_url";
+  image_url: { url: DataURL<"image"> };
+};
+
+// ---------------------------------------------------------------------------
 // Requests
 // ---------------------------------------------------------------------------
 
@@ -156,6 +205,7 @@ export interface ModelCard {
  * State and named questions for `systemOne`.
  *
  * Additional properties on a request variable are forwarded, including `null` values.
+ * Media fields are extensions to the Jev API: supported modalities, counts, and sizes depend on the model.
  */
 export interface SystemOneRequest<Q extends Questions = Questions> {
   /** Text, a JSON object or array, or `null` to evaluate. */
@@ -164,9 +214,15 @@ export interface SystemOneRequest<Q extends Questions = Questions> {
   questions: Q;
   /** Model override; omitted values inherit `defaultModel`. */
   model?: string;
+  /** Images evaluated with the state, shared by every question. */
+  images?: readonly ImageInput[];
+  /** Audio clips evaluated with the state, shared by every question. */
+  audio?: readonly AudioInput[];
+  /** Videos evaluated with the state, shared by every question. */
+  videos?: readonly VideoInput[];
 }
 
-/** Request body for `POST /v1/systemone`, with the model resolved. */
+/** Request body for `POST {defaultPath}`, with the model resolved. */
 export interface SystemOneRequestPayload extends SystemOneRequest {
   model: string;
 }
@@ -227,6 +283,11 @@ export interface TypeSafeClientConfig {
   baseURL?: string;
   /** Default model; falls back to `TYPESAFE_DEFAULT_MODEL`, then `jev-latest`. */
   defaultModel?: string;
+  /**
+   * Inference path appended to `baseURL` for `systemOne`, for servers that do not use the Jev path.
+   * Must start with `/`. Default: `/v1/systemone`.
+   */
+  defaultPath?: string;
   /**
    * Log level; falls back to `TYPESAFE_LOG_LEVEL`, then `warn`.
    * `info` logs request summaries; `debug` adds headers and bodies.

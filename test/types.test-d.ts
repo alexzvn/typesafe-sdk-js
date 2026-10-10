@@ -3,6 +3,7 @@ import {
   type APIPromise,
   type ChoiceResponse,
   choice,
+  imagePart,
   type ModelCard,
   type NoulQuestion,
   type NoulResponse,
@@ -159,6 +160,43 @@ describe("criteria shapes", () => {
     score("q", dynamic);
     // @ts-expect-error inference is a client method, not a resource
     client.systemOne.run({ state: "s", questions: { q: noul("?") } });
+  });
+});
+
+describe("media inputs", () => {
+  const questions = { q: noul("?") };
+
+  it("accepts data URLs and base64 objects of the matching kind inline", () => {
+    const bytes = "AA";
+    client.systemOne({
+      state: "s",
+      questions,
+      images: [`data:image/png;base64,${bytes}`, { content_type: "image/webp", base64: bytes }],
+      audio: ["data:audio/mpeg;base64,AA"],
+      videos: [{ content_type: "video/mp4", base64: bytes }],
+    });
+  });
+
+  it("rejects remote URLs, raw base64, and mismatched media kinds", () => {
+    // @ts-expect-error remote URLs are not media inputs
+    client.systemOne({ state: "s", questions, images: ["https://x.test/a.png"] });
+    // @ts-expect-error raw base64 needs a data URL prefix or a content type
+    client.systemOne({ state: "s", questions, images: ["iVBORw0KGgo="] });
+    // @ts-expect-error an image is not an audio clip
+    client.systemOne({ state: "s", questions, audio: ["data:image/png;base64,AA"] });
+    client.systemOne({
+      state: "s",
+      questions,
+      // @ts-expect-error a video content type is not an image
+      images: [{ content_type: "video/mp4", base64: "AA" }],
+    });
+  });
+
+  it("accepts image parts inside a state array", () => {
+    client.systemOne({
+      state: ["Listing title", imagePart({ content_type: "image/png", base64: "AA" })],
+      questions,
+    });
   });
 });
 

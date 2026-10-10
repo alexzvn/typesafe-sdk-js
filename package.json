@@ -1,9 +1,14 @@
 {
-  "name": "@typesafe-ai/sdk",
+  "name": "@alexzvn/systemone",
   "version": "0.6.0",
-  "description": "TypeScript SDK for the TypeSafe API",
+  "description": "TypeScript SDK for the TypeSafe API (fork of @typesafe-ai/sdk)",
   "license": "MIT",
-  "author": "evinism",
+  "author": "Alexzvn <personal@alexzvn.me>",
+  "contributors": [
+    "evinism",
+    "Allie Laabs <OverloadUT@gmail.com>",
+    "TypeSafe (https://typesafe.ai)"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -70,10 +75,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/typesafe-ai/typesafe-sdk-js.git"
+    "url": "git+https://github.com/alexzvn/typesafe-sdk-js.git"
   },
-  "homepage": "https://docs.typesafe.ai/sdk/javascript",
+  "homepage": "https://github.com/alexzvn/typesafe-sdk-js#readme",
   "bugs": {
-    "url": "https://github.com/typesafe-ai/typesafe-sdk-js/issues"
+    "url": "https://github.com/alexzvn/typesafe-sdk-js/issues"
   }
 }
